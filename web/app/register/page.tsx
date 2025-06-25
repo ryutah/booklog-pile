@@ -1,16 +1,16 @@
 'use client';
 
 import { useState } from 'react';
-import { useRouter } from 'next/navigation';
 import axios from 'axios';
 import Link from 'next/link';
+import { useAuth } from '@/contexts/AuthContext';
 
 export default function RegisterPage() {
   const [username, setUsername] = useState('');
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [error, setError] = useState('');
-  const router = useRouter();
+  const { login } = useAuth();
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -37,8 +37,8 @@ export default function RegisterPage() {
         });
 
         if (loginResponse.status === 200) {
-          localStorage.setItem('accessToken', loginResponse.data.accessToken);
-          router.push('/dashboard');
+          // AuthContextのlogin関数を呼び出す
+          await login(loginResponse.data.accessToken);
         }
       }
     } catch (err: any) {
