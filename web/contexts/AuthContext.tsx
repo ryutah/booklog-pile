@@ -30,7 +30,7 @@ interface AuthContextType {
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
 // Axiosのインスタンスを作成し、共通のヘッダーを設定
-const apiClient = axios.create({
+export const apiClient = axios.create({
   baseURL: '/api',
 });
 
@@ -76,6 +76,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
   const login = async (token: string) => {
     localStorage.setItem('accessToken', token);
+    apiClient.defaults.headers.common['Authorization'] = `Bearer ${token}`;
     try {
       // ログイン後にユーザー情報を再取得
       const response = await apiClient.get('/users/me');
@@ -90,6 +91,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
   const logout = () => {
     localStorage.removeItem('accessToken');
+    delete apiClient.defaults.headers.common['Authorization'];
     setUser(null);
     router.push('/login');
   };
