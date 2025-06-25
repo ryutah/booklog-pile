@@ -13,3 +13,70 @@ datasource db {
   provider = "postgresql"
   url      = env("DATABASE_URL")
 }
+
+// 読書ステータスを表すEnum
+enum BookStatus {
+  TSUNDOKU @map("積読")
+  READING @map("読書中")
+  FINISHED @map("読了")
+}
+
+// ユーザーモデル
+model User {
+  id             String         @id @default(uuid())
+  username       String
+  email          String         @unique
+  passwordHash   String         @map("password_hash")
+  createdAt      DateTime       @default(now()) @map("created_at")
+  booklogEntries BooklogEntry[]
+  reviews        Review[]
+
+  @@map("users")
+}
+
+// 書籍モデル (外部APIからの情報をキャッシュ)
+model Book {
+  isbn           String         @id
+  title          String
+  author         String?
+  publisher      String?
+  publishedDate  String?        @map("published_date")
+  description    String?
+  pageCount      Int?           @map("page_count")
+  thumbnailUrl   String?        @map("thumbnail_url")
+  booklogEntries BooklogEntry[]
+
+  @@map("books")
+}
+
+// 蔵書エントリモデル
+// どのユーザーがどの本をどのステータスで持っているかを管理する
+model BooklogEntry {
+  id       String     @id @default(uuid())
+  userId   String     @map("user_id")
+  bookIsbn String     @map("book_isbn")
+  status   BookStatus
+  addedAt  DateTime   @default(now()) @map("added_at")
+  reviews  Review[]
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+  book Book @relation(fields: [bookIsbn], references: [isbn], onDelete: Cascade)
+
+  @@unique([userId, bookIsbn])
+  @@map("booklog_entries")
+}
+
+// 感想モデル
+model Review {
+  id             String       @id @default(uuid())
+  booklogEntryId String       @map("booklog_entry_id")
+  userId         String       @map("user_id")
+  comment        String       @db.Text
+  hasSpoiler     Boolean      @default(false) @map("has_spoiler")
+  createdAt      DateTime     @default(now()) @map("created_at")
+
+  booklogEntry BooklogEntry @relation(fields: [booklogEntryId], references: [id], onDelete: Cascade)
+  user         User         @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@map("reviews")
+}
