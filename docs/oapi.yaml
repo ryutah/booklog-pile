@@ -1,0 +1,478 @@
+openapi: 3.0.3
+info:
+  title: Booklog Pile API
+  description: |-
+    積読（つんどく）解消SNS「Booklog Pile」のAPI仕様書。
+    ユーザーは本を登録し、読書ステータスを管理し、他のユーザーと読書体験を共有できます。
+  version: 1.0.0
+servers:
+  - url: https://api.booklog-pile.com/v1
+    description: 本番環境サーバー
+  - url: http://localhost:3000/v1
+    description: 開発環境サーバー
+
+#============================================
+# Paths (APIエンドポイント)
+#============================================
+paths:
+  # ユーザー認証
+  /auth/register:
+    post:
+      tags:
+        - Authentication
+      summary: 新規ユーザー登録
+      description: 新しいユーザーアカウントを作成します。
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/UserRegistration"
+      responses:
+        "201":
+          description: ユーザー登録成功
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/User"
+        "400":
+          description: 不正なリクエスト（メールアドレスの重複など）
+
+  /auth/login:
+    post:
+      tags:
+        - Authentication
+      summary: ログイン
+      description: メールアドレスとパスワードで認証し、アクセストークンを取得します。
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/UserLogin"
+      responses:
+        "200":
+          description: ログイン成功
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  accessToken:
+                    type: string
+                    description: APIアクセスのためのJWT
+        "401":
+          description: 認証失敗
+
+  # ユーザー情報
+  /users/me:
+    get:
+      tags:
+        - User
+      summary: 自分のユーザー情報を取得
+      security:
+        - bearerAuth: []
+      responses:
+        "200":
+          description: 成功
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/User"
+        "401":
+          description: 認証エラー
+
+  # 書籍検索
+  /books/search:
+    get:
+      tags:
+        - Book
+      summary: 書籍を検索
+      description: ISBNまたはキーワードで外部データベースから書籍情報を検索します。
+      parameters:
+        - name: isbn
+          in: query
+          description: 書籍のISBNコード
+          schema:
+            type: string
+        - name: keyword
+          in: query
+          description: 書籍のタイトルや著者名などのキーワード
+          schema:
+            type: string
+      responses:
+        "200":
+          description: 検索結果
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/Book"
+        "404":
+          description: 書籍が見つからない
+
+  # 蔵書（積読リスト）
+  /booklog:
+    get:
+      tags:
+        - Booklog
+      summary: 自分の蔵書リストを取得
+      description: 自分の「積読」「読書中」「読了」の書籍リストを取得します。
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: status
+          in: query
+          description: "ステータスで絞り込み (`積読`, `読書中`, `読了`)"
+          schema:
+            $ref: "#/components/schemas/BookStatus"
+      responses:
+        "200":
+          description: 成功
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/BooklogEntry"
+    post:
+      tags:
+        - Booklog
+      summary: 蔵書リストに本を追加
+      description: ISBNを指定して、自分の蔵書リストに本を追加します。
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                isbn:
+                  type: string
+                  description: 追加したい本のISBNコード
+                  example: "9784101010015"
+      responses:
+        "201":
+          description: 追加成功
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/BooklogEntry"
+        "400":
+          description: 不正なISBN、または既に追加済み
+
+  /booklog/{booklogId}:
+    patch:
+      tags:
+        - Booklog
+      summary: 蔵書のステータスを更新
+      description: "蔵書リスト内の本のステータスを更新します（例：「積読」→「読書中」）。"
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: booklogId
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                status:
+                  $ref: "#/components/schemas/BookStatus"
+      responses:
+        "200":
+          description: 更新成功
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/BooklogEntry"
+        "404":
+          description: 指定された蔵書が見つからない
+    delete:
+      tags:
+        - Booklog
+      summary: 蔵書を削除
+      description: 蔵書リストから本を削除します。
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: booklogId
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        "204":
+          description: 削除成功
+        "404":
+          description: 指定された蔵書が見つからない
+
+  # 感想
+  /booklog/{booklogId}/reviews:
+    get:
+      tags:
+        - Review
+      summary: 本の感想一覧を取得
+      parameters:
+        - name: booklogId
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        "200":
+          description: 成功
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/Review"
+    post:
+      tags:
+        - Review
+      summary: 感想を投稿
+      description: 読了した本に感想を投稿します。
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: booklogId
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/ReviewInput"
+      responses:
+        "201":
+          description: 投稿成功
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Review"
+
+  # "同志" マッチング
+  /comrades/search:
+    get:
+      tags:
+        - Comrade
+      summary: 同志を探す
+      description: 自分と同じ本を「積読」している他のユーザーを探します。
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: isbn
+          in: query
+          required: true
+          description: 探したい本のISBNコード
+          schema:
+            type: string
+      responses:
+        "200":
+          description: 成功
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/User" # ユーザー情報の配列を返す
+        "404":
+          description: 対象の書籍またはユーザーが見つからない
+
+  # 読書ログ
+  /stats/me:
+    get:
+      tags:
+        - Statistics
+      summary: 自分の読書ログを取得
+      description: 月間の読書数などの統計データを取得します。
+      security:
+        - bearerAuth: []
+      responses:
+        "200":
+          description: 成功
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ReadingStats"
+
+#============================================
+# Components (再利用可能な定義)
+#============================================
+components:
+  # 認証スキーマ
+  securitySchemes:
+    bearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
+
+  # データスキーマ
+  schemas:
+    User:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        username:
+          type: string
+          example: "booklover"
+        email:
+          type: string
+          format: email
+        createdAt:
+          type: string
+          format: date-time
+
+    UserRegistration:
+      type: object
+      required:
+        - username
+        - email
+        - password
+      properties:
+        username:
+          type: string
+        email:
+          type: string
+          format: email
+        password:
+          type: string
+          format: password
+          minLength: 8
+
+    UserLogin:
+      type: object
+      required:
+        - email
+        - password
+      properties:
+        email:
+          type: string
+          format: email
+        password:
+          type: string
+          format: password
+
+    Book:
+      type: object
+      properties:
+        isbn:
+          type: string
+          description: ISBN-13
+          example: "9784101010015"
+        title:
+          type: string
+          example: "こころ"
+        author:
+          type: string
+          example: "夏目漱石"
+        publisher:
+          type: string
+          example: "新潮社"
+        publishedDate:
+          type: string
+          format: date
+          example: "1989-05-20"
+        description:
+          type: string
+        pageCount:
+          type: integer
+          example: 280
+        thumbnailUrl:
+          type: string
+          format: uri
+          example: "https://cover.openbd.jp/9784101010015.jpg"
+
+    BooklogEntry:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        user:
+          $ref: "#/components/schemas/User"
+        book:
+          $ref: "#/components/schemas/Book"
+        status:
+          $ref: "#/components/schemas/BookStatus"
+        addedAt:
+          type: string
+          format: date-time
+
+    BookStatus:
+      type: string
+      enum: [積読, 読書中, 読了]
+      example: "積読"
+
+    Review:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        user:
+          $ref: "#/components/schemas/User"
+        comment:
+          type: string
+          example: "非常に考えさせられる作品でした。"
+        hasSpoiler:
+          type: boolean
+          default: false
+        createdAt:
+          type: string
+          format: date-time
+
+    ReviewInput:
+      type: object
+      required:
+        - comment
+      properties:
+        comment:
+          type: string
+        hasSpoiler:
+          type: boolean
+          description: "ネタバレを含む場合はtrue"
+          default: false
+
+    ReadingStats:
+      type: object
+      properties:
+        monthlyReadCount:
+          type: integer
+          description: 今月の読了冊数
+          example: 5
+        monthlyPageCount:
+          type: integer
+          description: 今月の読了ページ数
+          example: 1500
+        history:
+          type: array
+          description: 'グラフ表示用のデータ（例: [{month: "2025-05", count: 3}, ...]）'
+          items:
+            type: object
+            properties:
+              month:
+                type: string
+                example: "2025-05"
+              count:
+                type: integer
+                example: 3
+
