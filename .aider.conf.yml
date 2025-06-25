@@ -9,6 +9,23 @@ auto-lint: true
 # ファイルエンコーディングの指定。文字化けを防ぐためutf-8を推奨。
 encoding: utf-8
 
+file:
+  - web/app/api/auth/login/route.ts
+  - web/app/api/auth/register/route.ts
+  - web/app/api/booklog/route.ts
+  - web/app/api/users/me/route.ts
+  - web/app/dashboard/page.tsx
+  - web/app/layout.tsx
+  - web/app/login/page.tsx
+  - web/app/page.tsx
+  - web/app/register/page.tsx
+  - web/components/book-card.tsx
+  - web/contexts/AuthContext.tsx
+  - web/lib/auth.ts
+  - web/lib/prisma.ts
+  - web/lib/types.ts
+  - web/public/placeholder-cover.svg
+
 read:
   - docs/MASTER_SPEC.md
 
