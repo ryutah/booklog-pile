@@ -12,3 +12,5 @@ encoding: utf-8
 
 read:
   - docs/MASTER_SPEC.md
+
+restore-chat-history: true
