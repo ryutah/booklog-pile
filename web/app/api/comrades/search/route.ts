@@ -28,7 +28,7 @@ export async function GET(request: NextRequest) {
         booklogEntries: {
           some: {
             bookIsbn: isbn,
-            status: '積読',
+            status: 'TSUNDOKU',
           },
         },
       },

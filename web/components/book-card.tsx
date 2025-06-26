@@ -9,6 +9,12 @@ interface BookCardProps {
   onDelete: (entryId: string) => void;
 }
 
+const bookStatusLabels: Record<BookStatus, string> = {
+  TSUNDOKU: '積読',
+  READING: '読書中',
+  FINISHED: '読了',
+};
+
 export default function BookCard({ entry, onStatusChange, onDelete }: BookCardProps) {
   const { book } = entry;
 
@@ -53,9 +59,9 @@ export default function BookCard({ entry, onStatusChange, onDelete }: BookCardPr
               e.stopPropagation(); // イベントのバブリングを停止
             }}
           >
-            <option value="積読">積読</option>
-            <option value="読書中">読書中</option>
-            <option value="読了">読了</option>
+            <option value="TSUNDOKU">{bookStatusLabels.TSUNDOKU}</option>
+            <option value="READING">{bookStatusLabels.READING}</option>
+            <option value="FINISHED">{bookStatusLabels.FINISHED}</option>
             <option disabled>──────────</option>
             <option value="DELETE" className="font-bold text-red-600">
               削除する

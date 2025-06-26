@@ -9,10 +9,16 @@ import { BookStatus } from '@/lib/generated/prisma';
 import { BooklogEntry } from '@/lib/types';
 import BookCard from '@/components/book-card';
 
+const bookStatusLabels: Record<BookStatus, string> = {
+  TSUNDOKU: '積読',
+  READING: '読書中',
+  FINISHED: '読了',
+};
+
 export default function DashboardPage() {
   const { user, isAuthenticated, isLoading, logout } = useAuth();
   const router = useRouter();
-  const [activeTab, setActiveTab] = useState<BookStatus>('積読');
+  const [activeTab, setActiveTab] = useState<BookStatus>('TSUNDOKU');
   const [booklog, setBooklog] = useState<BooklogEntry[]>([]);
   const [isFetchingBooks, setIsFetchingBooks] = useState(true);
 
@@ -82,9 +88,9 @@ export default function DashboardPage() {
   }, [booklog, activeTab]);
 
   const TABS: { label: string; status: BookStatus }[] = [
-    { label: '積読', status: '積読' },
-    { label: '読書中', status: '読書中' },
-    { label: '読了', status: '読了' },
+    { label: bookStatusLabels.TSUNDOKU, status: 'TSUNDOKU' },
+    { label: bookStatusLabels.READING, status: 'READING' },
+    { label: bookStatusLabels.FINISHED, status: 'FINISHED' },
   ];
 
   const getCountForStatus = (status: BookStatus) => {

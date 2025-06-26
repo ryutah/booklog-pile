@@ -72,7 +72,7 @@ export async function POST(request: NextRequest, { params }: RouteParams) {
       );
     }
 
-    if (entry.status !== '読了') {
+    if (entry.status !== 'FINISHED') {
       return NextResponse.json(
         { message: '「読了」した本にのみ感想を投稿できます' },
         { status: 400 }

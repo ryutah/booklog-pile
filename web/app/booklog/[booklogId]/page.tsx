@@ -208,7 +208,7 @@ export default function BooklogDetailPage() {
             {/* Reviews Section */}
             <div className="space-y-8 lg:col-span-2">
               {/* Review Form */}
-              {entry.status === '読了' && (
+              {entry.status === 'FINISHED' && (
                 <div className="bg-white p-6 shadow sm:rounded-lg">
                   <h3 className="text-lg font-medium text-gray-900">感想を投稿する</h3>
                   <form onSubmit={handleReviewSubmit} className="mt-4 space-y-4">

@@ -138,7 +138,7 @@ export async function POST(request: NextRequest) {
       data: {
         userId,
         bookIsbn: isbn,
-        status: '積読', // デフォルトステータス
+        status: 'TSUNDOKU', // デフォルトステータス
       },
       include: {
         book: true, // 作成したエントリに書籍情報を含めて返す

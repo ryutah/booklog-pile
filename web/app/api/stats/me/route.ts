@@ -17,7 +17,7 @@ export async function GET(request: NextRequest) {
     const monthlyCompletedEntries = await prisma.booklogEntry.findMany({
       where: {
         userId,
-        status: '読了',
+        status: 'FINISHED',
         completedAt: {
           gte: startOfMonth,
           lte: endOfMonth,
@@ -43,7 +43,7 @@ export async function GET(request: NextRequest) {
     const allCompletedEntries = await prisma.booklogEntry.findMany({
       where: {
         userId,
-        status: '読了',
+        status: 'FINISHED',
         completedAt: {
           gte: oneYearAgo,
         },

@@ -82,9 +82,9 @@ export async function PATCH(request: NextRequest, { params }: RouteParams) {
     };
 
     // 読了ステータスが変更された場合のcompletedAtの処理
-    if (status === '読了' && entry.status !== '読了') {
+    if (status === 'FINISHED' && entry.status !== 'FINISHED') {
       dataToUpdate.completedAt = new Date();
-    } else if (status !== '読了' && entry.status === '読了') {
+    } else if (status !== 'FINISHED' && entry.status === 'FINISHED') {
       dataToUpdate.completedAt = null;
     }
 
