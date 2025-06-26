@@ -5,7 +5,7 @@ import { useParams, useRouter } from 'next/navigation';
 import Link from 'next/link';
 import Image from 'next/image';
 import { useAuth, apiClient } from '@/contexts/AuthContext';
-import { BooklogEntry, SafeUser } from '@/lib/types';
+import { BooklogEntry, SafeUser, ReviewWithUser } from '@/lib/types';
 
 export default function BooklogDetailPage() {
   const { isAuthenticated, isLoading: isAuthLoading } = useAuth();
@@ -15,8 +15,14 @@ export default function BooklogDetailPage() {
 
   const [entry, setEntry] = useState<BooklogEntry | null>(null);
   const [comrades, setComrades] = useState<SafeUser[]>([]);
+  const [reviews, setReviews] = useState<ReviewWithUser[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+
+  const [newComment, setNewComment] = useState('');
+  const [hasSpoiler, setHasSpoiler] = useState(false);
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  const [visibleSpoilers, setVisibleSpoilers] = useState<Set<string>>(new Set());
 
   useEffect(() => {
     if (!isAuthLoading && !isAuthenticated) {
@@ -35,10 +41,14 @@ export default function BooklogDetailPage() {
           setEntry(fetchedEntry);
 
           if (fetchedEntry) {
-            const comradesResponse = await apiClient.get('/comrades/search', {
-              params: { isbn: fetchedEntry.book.isbn },
-            });
+            const [comradesResponse, reviewsResponse] = await Promise.all([
+              apiClient.get('/comrades/search', {
+                params: { isbn: fetchedEntry.book.isbn },
+              }),
+              apiClient.get(`/booklog/${booklogId}/reviews`),
+            ]);
             setComrades(comradesResponse.data);
+            setReviews(reviewsResponse.data);
           }
         } catch (err) {
           console.error('Failed to fetch booklog data:', err);
@@ -50,6 +60,39 @@ export default function BooklogDetailPage() {
       fetchBooklogData();
     }
   }, [isAuthenticated, booklogId]);
+
+  const handleReviewSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!newComment.trim() || !entry) return;
+
+    setIsSubmitting(true);
+    try {
+      const response = await apiClient.post(`/booklog/${booklogId}/reviews`, {
+        comment: newComment,
+        hasSpoiler,
+      });
+      setReviews([response.data, ...reviews]); // 新しい感想をリストの先頭に追加
+      setNewComment('');
+      setHasSpoiler(false);
+    } catch (err: any) {
+      console.error('Failed to post review:', err);
+      alert(err.response?.data?.message || '感想の投稿に失敗しました。');
+    } finally {
+      setIsSubmitting(false);
+    }
+  };
+
+  const toggleSpoiler = (reviewId: string) => {
+    setVisibleSpoilers((prev) => {
+      const newSet = new Set(prev);
+      if (newSet.has(reviewId)) {
+        newSet.delete(reviewId);
+      } else {
+        newSet.add(reviewId);
+      }
+      return newSet;
+    });
+  };
 
   if (isAuthLoading || isLoading) {
     return (
@@ -162,12 +205,98 @@ export default function BooklogDetailPage() {
               </div>
             </div>
 
-            {/* Reviews Section (Placeholder) */}
-            <div className="lg:col-span-2">
+            {/* Reviews Section */}
+            <div className="space-y-8 lg:col-span-2">
+              {/* Review Form */}
+              {entry.status === '読了' && (
+                <div className="bg-white p-6 shadow sm:rounded-lg">
+                  <h3 className="text-lg font-medium text-gray-900">感想を投稿する</h3>
+                  <form onSubmit={handleReviewSubmit} className="mt-4 space-y-4">
+                    <div>
+                      <textarea
+                        rows={4}
+                        value={newComment}
+                        onChange={(e) => setNewComment(e.target.value)}
+                        className="block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm"
+                        placeholder="感想を書きましょう..."
+                        required
+                      />
+                    </div>
+                    <div className="flex items-center justify-between">
+                      <div className="flex items-start">
+                        <div className="flex h-5 items-center">
+                          <input
+                            id="hasSpoiler"
+                            name="hasSpoiler"
+                            type="checkbox"
+                            checked={hasSpoiler}
+                            onChange={(e) => setHasSpoiler(e.target.checked)}
+                            className="h-4 w-4 rounded border-gray-300 text-indigo-600 focus:ring-indigo-500"
+                          />
+                        </div>
+                        <div className="ml-3 text-sm">
+                          <label htmlFor="hasSpoiler" className="font-medium text-gray-700">
+                            ネタバレを含む
+                          </label>
+                        </div>
+                      </div>
+                      <button
+                        type="submit"
+                        disabled={isSubmitting}
+                        className="inline-flex justify-center rounded-md border border-transparent bg-indigo-600 py-2 px-4 text-sm font-medium text-white shadow-sm hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2 disabled:opacity-50"
+                      >
+                        {isSubmitting ? '投稿中...' : '投稿する'}
+                      </button>
+                    </div>
+                  </form>
+                </div>
+              )}
+
+              {/* Review Timeline */}
               <div className="bg-white p-6 shadow sm:rounded-lg">
                 <h3 className="text-lg font-medium text-gray-900">感想タイムライン</h3>
-                <div className="mt-4 rounded-lg border-2 border-dashed border-gray-200 p-8 text-center">
-                  <p className="text-sm text-gray-400">（感想機能は後ほど実装します）</p>
+                <div className="mt-4">
+                  {reviews.length > 0 ? (
+                    <ul className="space-y-6">
+                      {reviews.map((review) => (
+                        <li key={review.id} className="flex space-x-4">
+                          <div className="flex-shrink-0">
+                            <span className="inline-flex h-10 w-10 items-center justify-center rounded-full bg-gray-200">
+                              <span className="text-md font-medium leading-none text-gray-600">
+                                {review.user.username.charAt(0).toUpperCase()}
+                              </span>
+                            </span>
+                          </div>
+                          <div className="flex-1">
+                            <div className="flex items-baseline justify-between">
+                              <p className="text-sm font-medium text-gray-900">
+                                {review.user.username}
+                              </p>
+                              <p className="text-xs text-gray-500">
+                                {new Date(review.createdAt).toLocaleString('ja-JP')}
+                              </p>
+                            </div>
+                            <div className="mt-2 text-sm text-gray-700">
+                              {review.hasSpoiler && !visibleSpoilers.has(review.id) ? (
+                                <button
+                                  onClick={() => toggleSpoiler(review.id)}
+                                  className="rounded-md bg-gray-100 px-3 py-2 text-sm font-medium text-gray-700 hover:bg-gray-200"
+                                >
+                                  ネタバレを含む感想です (クリックで表示)
+                                </button>
+                              ) : (
+                                <p className="whitespace-pre-wrap">{review.comment}</p>
+                              )}
+                            </div>
+                          </div>
+                        </li>
+                      ))}
+                    </ul>
+                  ) : (
+                    <div className="rounded-lg border-2 border-dashed border-gray-200 p-8 text-center">
+                      <p className="text-sm text-gray-400">まだ感想はありません。</p>
+                    </div>
+                  )}
                 </div>
               </div>
             </div>
