@@ -76,14 +76,24 @@ export async function PATCH(request: NextRequest, { params }: RouteParams) {
       );
     }
 
+    // 更新データの準備
+    const dataToUpdate: { status: BookStatus; completedAt?: Date | null } = {
+      status: status,
+    };
+
+    // 読了ステータスが変更された場合のcompletedAtの処理
+    if (status === '読了' && entry.status !== '読了') {
+      dataToUpdate.completedAt = new Date();
+    } else if (status !== '読了' && entry.status === '読了') {
+      dataToUpdate.completedAt = null;
+    }
+
     // ステータスを更新
     const updatedEntry = await prisma.booklogEntry.update({
       where: {
         id: booklogId,
       },
-      data: {
-        status: status,
-      },
+      data: dataToUpdate,
       include: {
         book: true,
       },
