@@ -52,12 +52,13 @@ model Book {
 // 蔵書エントリモデル
 // どのユーザーがどの本をどのステータスで持っているかを管理する
 model BooklogEntry {
-  id       String     @id @default(uuid())
-  userId   String     @map("user_id")
-  bookIsbn String     @map("book_isbn")
-  status   BookStatus
-  addedAt  DateTime   @default(now()) @map("added_at")
-  reviews  Review[]
+  id          String     @id @default(uuid())
+  userId      String     @map("user_id")
+  bookIsbn    String     @map("book_isbn")
+  status      BookStatus
+  addedAt     DateTime   @default(now()) @map("added_at")
+  completedAt DateTime?  @map("completed_at")
+  reviews     Review[]
 
   user User @relation(fields: [userId], references: [id], onDelete: Cascade)
   book Book @relation(fields: [bookIsbn], references: [isbn], onDelete: Cascade)
