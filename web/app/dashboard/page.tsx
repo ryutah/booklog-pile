@@ -58,6 +58,25 @@ export default function DashboardPage() {
     }
   };
 
+  const handleDelete = async (entryId: string) => {
+    if (!window.confirm('この本を本棚から削除しますか？\nこの操作は元に戻せません。')) {
+      return;
+    }
+
+    const originalBooklog = [...booklog];
+    const updatedBooklog = booklog.filter((entry) => entry.id !== entryId);
+    setBooklog(updatedBooklog);
+
+    try {
+      await apiClient.delete(`/booklog/${entryId}`);
+      // State is already updated optimistically.
+    } catch (error) {
+      console.error('Failed to delete book:', error);
+      setBooklog(originalBooklog);
+      alert('本の削除に失敗しました。');
+    }
+  };
+
   const filteredBooklog = useMemo(() => {
     return booklog.filter((entry) => entry.status === activeTab);
   }, [booklog, activeTab]);
@@ -139,7 +158,12 @@ export default function DashboardPage() {
             ) : filteredBooklog.length > 0 ? (
               <div className="grid grid-cols-2 gap-x-4 gap-y-8 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6">
                 {filteredBooklog.map((entry) => (
-                  <BookCard key={entry.id} entry={entry} onStatusChange={handleStatusChange} />
+                  <BookCard
+                    key={entry.id}
+                    entry={entry}
+                    onStatusChange={handleStatusChange}
+                    onDelete={handleDelete}
+                  />
                 ))}
               </div>
             ) : (

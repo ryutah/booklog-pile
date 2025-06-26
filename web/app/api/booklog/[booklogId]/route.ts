@@ -99,3 +99,45 @@ export async function PATCH(request: NextRequest, { params }: RouteParams) {
     );
   }
 }
+
+export async function DELETE(request: NextRequest, { params }: RouteParams) {
+  try {
+    const userId = getUserIdFromRequest(request);
+    if (!userId) {
+      return NextResponse.json({ message: '認証エラー' }, { status: 401 });
+    }
+
+    const { booklogId } = params;
+
+    // ユーザーが所有する蔵書エントリか確認
+    const entry = await prisma.booklogEntry.findFirst({
+      where: {
+        id: booklogId,
+        userId: userId,
+      },
+    });
+
+    if (!entry) {
+      return NextResponse.json(
+        { message: '指定された蔵書が見つからないか、権限がありません' },
+        { status: 404 }
+      );
+    }
+
+    // 蔵書を削除
+    await prisma.booklogEntry.delete({
+      where: {
+        id: booklogId,
+      },
+    });
+
+    return new NextResponse(null, { status: 204 }); // No Content
+
+  } catch (error) {
+    console.error('Delete booklog entry error:', error);
+    return NextResponse.json(
+      { message: 'Internal Server Error' },
+      { status: 500 }
+    );
+  }
+}

@@ -6,14 +6,22 @@ import Link from 'next/link';
 interface BookCardProps {
   entry: BooklogEntry;
   onStatusChange: (entryId: string, newStatus: BookStatus) => void;
+  onDelete: (entryId: string) => void;
 }
 
-export default function BookCard({ entry, onStatusChange }: BookCardProps) {
+export default function BookCard({ entry, onStatusChange, onDelete }: BookCardProps) {
   const { book } = entry;
 
   const handleSelectChange = (e: React.ChangeEvent<HTMLSelectElement>) => {
-    const newStatus = e.target.value as BookStatus;
-    onStatusChange(entry.id, newStatus);
+    const value = e.target.value;
+    if (value === 'DELETE') {
+      onDelete(entry.id);
+      // Prevent the select from showing "--- 削除する ---" after click
+      e.target.value = entry.status;
+    } else {
+      const newStatus = value as BookStatus;
+      onStatusChange(entry.id, newStatus);
+    }
   };
 
   return (
@@ -48,6 +56,10 @@ export default function BookCard({ entry, onStatusChange }: BookCardProps) {
             <option value="積読">積読</option>
             <option value="読書中">読書中</option>
             <option value="読了">読了</option>
+            <option disabled>──────────</option>
+            <option value="DELETE" className="font-bold text-red-600">
+              削除する
+            </option>
           </select>
         </div>
       </div>
