@@ -7,6 +7,7 @@ import { apiClient } from '@/contexts/AuthContext';
 import { Book } from '@prisma/client';
 import { useAuth } from '@/contexts/AuthContext';
 import { useRouter } from 'next/navigation';
+import { BooklogEntry } from '@/lib/types';
 
 export default function SearchPage() {
   const { isAuthenticated, isLoading: isAuthLoading } = useAuth();
@@ -15,13 +16,33 @@ export default function SearchPage() {
   const [results, setResults] = useState<Book[]>([]);
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const [addedBooks, setAddedBooks] = useState<Set<string>>(new Set());
+  
+  const [myBookIsbns, setMyBookIsbns] = useState<Set<string>>(new Set());
+  const [isFetchingMyBooks, setIsFetchingMyBooks] = useState(true);
+  const [addedBooks, setAddedBooks] = useState<Set<string>>(new Set()); // For optimistic UI
 
   useEffect(() => {
     if (!isAuthLoading && !isAuthenticated) {
       router.push('/login');
     }
   }, [isAuthLoading, isAuthenticated, router]);
+
+  useEffect(() => {
+    if (isAuthenticated) {
+      setIsFetchingMyBooks(true);
+      apiClient.get<BooklogEntry[]>('/booklog')
+        .then(response => {
+          const isbns = new Set(response.data.map(entry => entry.bookIsbn));
+          setMyBookIsbns(isbns);
+        })
+        .catch(err => {
+          console.error("Failed to fetch user's booklog", err);
+        })
+        .finally(() => {
+          setIsFetchingMyBooks(false);
+        });
+    }
+  }, [isAuthenticated]);
 
   if (isAuthLoading || !isAuthenticated) {
     return (
@@ -53,12 +74,26 @@ export default function SearchPage() {
   };
 
   const handleAddBook = async (isbn: string) => {
+    // Optimistic update
+    setAddedBooks((prev) => new Set(prev).add(isbn));
+
     try {
       await apiClient.post('/booklog', { isbn });
-      setAddedBooks((prev) => new Set(prev).add(isbn));
+      // Update the "ground truth" state on success
+      setMyBookIsbns((prev) => new Set(prev).add(isbn));
     } catch (err: any) {
+      // Revert optimistic update on failure
+      setAddedBooks((prev) => {
+        const newSet = new Set(prev);
+        newSet.delete(isbn);
+        return newSet;
+      });
+
       if (err.response?.data?.message) {
-        alert(err.response.data.message);
+        // Don't show alert if the book is just "already added"
+        if (err.response.status !== 400 || !err.response.data.message.includes('既に追加されています')) {
+          alert(err.response.data.message);
+        }
       } else {
         alert('本の追加に失敗しました。');
       }
@@ -107,57 +142,64 @@ export default function SearchPage() {
 
             {!isLoading && results.length === 0 && !error && (
               <div className="py-12 text-center">
-                <p className="text-gray-500">検索結果はここに表示されます。</p>
+                {isFetchingMyBooks ? (
+                  <p className="text-gray-500">あなたの本棚を読み込み中...</p>
+                ) : (
+                  <p className="text-gray-500">検索結果はここに表示されます。</p>
+                )}
               </div>
             )}
 
             {results.length > 0 && (
               <div className="overflow-hidden bg-white shadow sm:rounded-md">
                 <ul role="list" className="divide-y divide-gray-200">
-                  {results.map((book) => (
-                    <li key={book.isbn}>
-                      <div className="flex items-center px-4 py-4 sm:px-6">
-                        <div className="flex min-w-0 flex-1 items-center">
-                          <div className="flex-shrink-0">
-                            <Image
-                              src={book.thumbnailUrl || '/placeholder-cover.svg'}
-                              alt={`「${book.title}」の書影`}
-                              width={48}
-                              height={72}
-                              className="h-18 w-12 rounded-sm object-cover"
-                            />
-                          </div>
-                          <div className="min-w-0 flex-1 px-4 md:grid md:grid-cols-2 md:gap-4">
-                            <div>
-                              <p className="truncate text-sm font-medium text-indigo-600">{book.title}</p>
-                              <p className="mt-2 flex items-center text-sm text-gray-500">
-                                <span className="truncate">{book.author || '著者不明'}</span>
-                              </p>
+                  {results.map((book) => {
+                    const isAdded = myBookIsbns.has(book.isbn) || addedBooks.has(book.isbn);
+                    return (
+                      <li key={book.isbn}>
+                        <div className="flex items-center px-4 py-4 sm:px-6">
+                          <div className="flex min-w-0 flex-1 items-center">
+                            <div className="flex-shrink-0">
+                              <Image
+                                src={book.thumbnailUrl || '/placeholder-cover.svg'}
+                                alt={`「${book.title}」の書影`}
+                                width={48}
+                                height={72}
+                                className="h-18 w-12 rounded-sm object-cover"
+                              />
                             </div>
-                            <div className="hidden md:block">
+                            <div className="min-w-0 flex-1 px-4 md:grid md:grid-cols-2 md:gap-4">
                               <div>
-                                <p className="text-sm text-gray-900">
-                                  出版社: {book.publisher || 'N/A'}
+                                <p className="truncate text-sm font-medium text-indigo-600">{book.title}</p>
+                                <p className="mt-2 flex items-center text-sm text-gray-500">
+                                  <span className="truncate">{book.author || '著者不明'}</span>
                                 </p>
-                                <p className="mt-2 text-sm text-gray-500">
-                                  出版日: {book.publishedDate || 'N/A'}
-                                </p>
+                              </div>
+                              <div className="hidden md:block">
+                                <div>
+                                  <p className="text-sm text-gray-900">
+                                    出版社: {book.publisher || 'N/A'}
+                                  </p>
+                                  <p className="mt-2 text-sm text-gray-500">
+                                    出版日: {book.publishedDate || 'N/A'}
+                                  </p>
+                                </div>
                               </div>
                             </div>
                           </div>
+                          <div>
+                            <button
+                              onClick={() => handleAddBook(book.isbn)}
+                              disabled={isAdded}
+                              className="inline-flex items-center rounded-full border border-transparent bg-indigo-600 px-3 py-1.5 text-sm font-medium text-white shadow-sm hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2 disabled:bg-gray-400"
+                            >
+                              {isAdded ? '追加済み' : '追加'}
+                            </button>
+                          </div>
                         </div>
-                        <div>
-                          <button
-                            onClick={() => handleAddBook(book.isbn)}
-                            disabled={addedBooks.has(book.isbn)}
-                            className="inline-flex items-center rounded-full border border-transparent bg-indigo-600 px-3 py-1.5 text-sm font-medium text-white shadow-sm hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2 disabled:bg-gray-400"
-                          >
-                            {addedBooks.has(book.isbn) ? '追加済み' : '追加'}
-                          </button>
-                        </div>
-                      </div>
-                    </li>
-                  ))}
+                      </li>
+                    );
+                  })}
                 </ul>
               </div>
             )}
