@@ -5,7 +5,7 @@ import { useParams, useRouter } from 'next/navigation';
 import Link from 'next/link';
 import Image from 'next/image';
 import { useAuth, apiClient } from '@/contexts/AuthContext';
-import { BooklogEntry } from '@/lib/types';
+import { BooklogEntry, SafeUser } from '@/lib/types';
 
 export default function BooklogDetailPage() {
   const { isAuthenticated, isLoading: isAuthLoading } = useAuth();
@@ -14,6 +14,7 @@ export default function BooklogDetailPage() {
   const booklogId = params.booklogId as string;
 
   const [entry, setEntry] = useState<BooklogEntry | null>(null);
+  const [comrades, setComrades] = useState<SafeUser[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
@@ -25,20 +26,28 @@ export default function BooklogDetailPage() {
 
   useEffect(() => {
     if (isAuthenticated && booklogId) {
-      const fetchBooklogEntry = async () => {
+      const fetchBooklogData = async () => {
         setIsLoading(true);
         setError(null);
         try {
-          const response = await apiClient.get(`/booklog/${booklogId}`);
-          setEntry(response.data);
+          const entryResponse = await apiClient.get(`/booklog/${booklogId}`);
+          const fetchedEntry: BooklogEntry = entryResponse.data;
+          setEntry(fetchedEntry);
+
+          if (fetchedEntry) {
+            const comradesResponse = await apiClient.get('/comrades/search', {
+              params: { isbn: fetchedEntry.book.isbn },
+            });
+            setComrades(comradesResponse.data);
+          }
         } catch (err) {
-          console.error('Failed to fetch booklog entry:', err);
+          console.error('Failed to fetch booklog data:', err);
           setError('蔵書情報の取得に失敗しました。');
         } finally {
           setIsLoading(false);
         }
       };
-      fetchBooklogEntry();
+      fetchBooklogData();
     }
   }, [isAuthenticated, booklogId]);
 
@@ -115,15 +124,40 @@ export default function BooklogDetailPage() {
 
           {/* Comrades and Reviews Section */}
           <div className="mt-8 grid grid-cols-1 gap-8 lg:grid-cols-3">
-            {/* Comrades List (Placeholder) */}
+            {/* Comrades List */}
             <div className="lg:col-span-1">
               <div className="bg-white p-6 shadow sm:rounded-lg">
                 <h3 className="text-lg font-medium text-gray-900">"同志"リスト</h3>
-                <p className="mt-4 text-sm text-gray-500">
+                <p className="mt-2 text-sm text-gray-500">
                   この本を「積読」している他のユーザーです。
                 </p>
-                <div className="mt-4 rounded-lg border-2 border-dashed border-gray-200 p-4 text-center">
-                  <p className="text-sm text-gray-400">（同志リストは後ほど実装します）</p>
+                <div className="mt-4">
+                  {comrades.length > 0 ? (
+                    <ul className="space-y-3">
+                      {comrades.map((comrade) => (
+                        <li key={comrade.id} className="flex items-center space-x-3">
+                          <div className="flex-shrink-0">
+                            <span className="inline-flex h-8 w-8 items-center justify-center rounded-full bg-gray-200">
+                              <span className="text-sm font-medium leading-none text-gray-600">
+                                {comrade.username.charAt(0).toUpperCase()}
+                              </span>
+                            </span>
+                          </div>
+                          <div className="min-w-0 flex-1">
+                            <p className="truncate text-sm font-medium text-gray-900">
+                              {comrade.username}
+                            </p>
+                          </div>
+                        </li>
+                      ))}
+                    </ul>
+                  ) : (
+                    <div className="rounded-lg border-2 border-dashed border-gray-200 p-4 text-center">
+                      <p className="text-sm text-gray-400">
+                        まだ誰もこの本を積んでいません。
+                      </p>
+                    </div>
+                  )}
                 </div>
               </div>
             </div>
