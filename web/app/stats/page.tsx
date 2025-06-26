@@ -4,6 +4,7 @@ import { useEffect, useState } from 'react';
 import Link from 'next/link';
 import { useAuth, apiClient } from '@/contexts/AuthContext';
 import { useRouter } from 'next/navigation';
+import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer } from 'recharts';
 
 interface ReadingStats {
   monthlyReadCount: number;
@@ -100,13 +101,38 @@ export default function StatsPage() {
               <div className="overflow-hidden rounded-lg bg-white shadow">
                 <div className="px-4 py-5 sm:p-6">
                   <h3 className="text-base font-semibold leading-6 text-gray-900">月別読了数（過去12ヶ月）</h3>
-                  <div className="mt-4 rounded-lg border-2 border-dashed border-gray-200 p-8 text-center">
-                    <p className="text-sm text-gray-400">（グラフ表示は後ほど実装します）</p>
-                    <ul className="mt-4 text-left font-mono">
-                      {stats.history.map(item => (
-                        <li key={item.month}>{item.month}: {item.count}冊</li>
-                      ))}
-                    </ul>
+                  <div className="mt-6" style={{ width: '100%', height: 350 }}>
+                    <ResponsiveContainer>
+                      <BarChart
+                        data={stats.history}
+                        margin={{
+                          top: 5,
+                          right: 20,
+                          left: -10,
+                          bottom: 5,
+                        }}
+                      >
+                        <CartesianGrid strokeDasharray="3 3" />
+                        <XAxis
+                          dataKey="month"
+                          tickFormatter={(tick) => {
+                            const parts = tick.split('-');
+                            return parts.length === 2 ? `${parseInt(parts[1], 10)}月` : tick;
+                          }}
+                          fontSize={12}
+                        />
+                        <YAxis allowDecimals={false} />
+                        <Tooltip
+                          formatter={(value) => [`${value}冊`, '読了数']}
+                          labelFormatter={(label) => {
+                            const parts = label.split('-');
+                            return parts.length === 2 ? `${parts[0]}年${parseInt(parts[1], 10)}月` : label;
+                          }}
+                        />
+                        <Legend verticalAlign="top" height={36} />
+                        <Bar dataKey="count" fill="#818cf8" name="読了数" radius={[4, 4, 0, 0]} />
+                      </BarChart>
+                    </ResponsiveContainer>
                   </div>
                 </div>
               </div>
