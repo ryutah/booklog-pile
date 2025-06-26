@@ -39,6 +39,25 @@ export default function DashboardPage() {
     }
   }, [isAuthenticated]);
 
+  const handleStatusChange = async (entryId: string, newStatus: BookStatus) => {
+    // Optimistic UI update
+    const originalBooklog = [...booklog];
+    const updatedBooklog = booklog.map((entry) =>
+      entry.id === entryId ? { ...entry, status: newStatus } : entry
+    );
+    setBooklog(updatedBooklog);
+
+    try {
+      await apiClient.patch(`/booklog/${entryId}`, { status: newStatus });
+      // The state is already updated optimistically.
+    } catch (error) {
+      console.error('Failed to update status:', error);
+      // If the API call fails, revert to the original state
+      setBooklog(originalBooklog);
+      alert('ステータスの更新に失敗しました。');
+    }
+  };
+
   const filteredBooklog = useMemo(() => {
     return booklog.filter((entry) => entry.status === activeTab);
   }, [booklog, activeTab]);
@@ -120,7 +139,7 @@ export default function DashboardPage() {
             ) : filteredBooklog.length > 0 ? (
               <div className="grid grid-cols-2 gap-x-4 gap-y-8 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6">
                 {filteredBooklog.map((entry) => (
-                  <BookCard key={entry.id} entry={entry} />
+                  <BookCard key={entry.id} entry={entry} onStatusChange={handleStatusChange} />
                 ))}
               </div>
             ) : (

@@ -1,12 +1,19 @@
 import { BooklogEntry } from '@/lib/types';
+import { BookStatus } from '@prisma/client';
 import Image from 'next/image';
 
 interface BookCardProps {
   entry: BooklogEntry;
+  onStatusChange: (entryId: string, newStatus: BookStatus) => void;
 }
 
-export default function BookCard({ entry }: BookCardProps) {
+export default function BookCard({ entry, onStatusChange }: BookCardProps) {
   const { book } = entry;
+
+  const handleSelectChange = (e: React.ChangeEvent<HTMLSelectElement>) => {
+    const newStatus = e.target.value as BookStatus;
+    onStatusChange(entry.id, newStatus);
+  };
 
   return (
     <div className="group relative flex flex-col overflow-hidden rounded-lg border bg-white shadow-sm transition-shadow hover:shadow-md">
@@ -24,7 +31,18 @@ export default function BookCard({ entry }: BookCardProps) {
           {book.title}
         </h3>
         <p className="mt-1 flex-1 text-xs text-gray-600">{book.author}</p>
-        {/* TODO: ステータス変更ドロップダウンをここに追加 */}
+        <div className="mt-2">
+          <select
+            value={entry.status}
+            onChange={handleSelectChange}
+            className="w-full rounded-md border-gray-300 text-xs shadow-sm focus:border-indigo-300 focus:ring focus:ring-indigo-200 focus:ring-opacity-50"
+            onClick={(e) => e.stopPropagation()} // カード全体のクリックイベントを止める
+          >
+            <option value="積読">積読</option>
+            <option value="読書中">読書中</option>
+            <option value="読了">読了</option>
+          </select>
+        </div>
       </div>
     </div>
   );
