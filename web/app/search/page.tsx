@@ -4,7 +4,7 @@ import { useState, useEffect } from 'react';
 import Link from 'next/link';
 import Image from 'next/image';
 import { apiClient } from '@/contexts/AuthContext';
-import { Book } from '@prisma/client';
+import { Book } from '@/lib/generated/prisma';
 import { useAuth } from '@/contexts/AuthContext';
 import { useRouter } from 'next/navigation';
 import { BooklogEntry } from '@/lib/types';

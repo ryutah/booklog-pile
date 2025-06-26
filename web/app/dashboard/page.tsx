@@ -5,7 +5,7 @@ import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 import { useAuth } from '@/contexts/AuthContext';
 import { apiClient } from '@/contexts/AuthContext';
-import { BookStatus } from '@prisma/client';
+import { BookStatus } from '@/lib/generated/prisma';
 import { BooklogEntry } from '@/lib/types';
 import BookCard from '@/components/book-card';
 

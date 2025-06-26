@@ -1,5 +1,5 @@
 import { BooklogEntry } from '@/lib/types';
-import { BookStatus } from '@prisma/client';
+import { BookStatus } from '@/lib/generated/prisma';
 import Image from 'next/image';
 import Link from 'next/link';
 

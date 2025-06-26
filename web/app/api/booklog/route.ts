@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import prisma from '@/lib/prisma';
 import { getUserIdFromRequest } from '@/lib/auth';
-import { BookStatus, Book } from '@prisma/client';
+import { BookStatus, Book } from '@/lib/generated/prisma';
 import axios from 'axios';
 
 export async function GET(request: NextRequest) {

@@ -1,4 +1,4 @@
-import { PrismaClient } from '@prisma/client';
+import { PrismaClient } from '@/lib/generated/prisma';
 
 // Next.js の開発環境では、ホットリロードによって PrismaClient が
 // 大量にインスタンス化されてしまうのを防ぐための常套句です。

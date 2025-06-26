@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import axios from 'axios';
-import { Book } from '@prisma/client';
+import { Book } from '@/lib/generated/prisma';
 
 // Google Books APIからのレスポンスの型定義（必要な部分のみ）
 interface GoogleBookVolume {
