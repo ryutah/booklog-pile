@@ -116,8 +116,11 @@ export default function StatsPage() {
                         <XAxis
                           dataKey="month"
                           tickFormatter={(tick) => {
-                            const parts = tick.split('-');
-                            return parts.length === 2 ? `${parseInt(parts[1], 10)}月` : tick;
+                            if (typeof tick === 'string') {
+                              const parts = tick.split('-');
+                              return parts.length === 2 ? `${parseInt(parts[1], 10)}月` : tick;
+                            }
+                            return tick;
                           }}
                           fontSize={12}
                         />
@@ -125,8 +128,11 @@ export default function StatsPage() {
                         <Tooltip
                           formatter={(value) => [`${value}冊`, '読了数']}
                           labelFormatter={(label) => {
-                            const parts = label.split('-');
-                            return parts.length === 2 ? `${parts[0]}年${parseInt(parts[1], 10)}月` : label;
+                            if (typeof label === 'string') {
+                              const parts = label.split('-');
+                              return parts.length === 2 ? `${parts[0]}年${parseInt(parts[1], 10)}月` : label;
+                            }
+                            return label;
                           }}
                         />
                         <Legend verticalAlign="top" height={36} />
