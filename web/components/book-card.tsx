@@ -1,6 +1,7 @@
 import { BooklogEntry } from '@/lib/types';
 import { BookStatus } from '@prisma/client';
 import Image from 'next/image';
+import Link from 'next/link';
 
 interface BookCardProps {
   entry: BooklogEntry;
@@ -16,7 +17,10 @@ export default function BookCard({ entry, onStatusChange }: BookCardProps) {
   };
 
   return (
-    <div className="group relative flex flex-col overflow-hidden rounded-lg border bg-white shadow-sm transition-shadow hover:shadow-md">
+    <Link
+      href={`/booklog/${entry.id}`}
+      className="group relative flex flex-col overflow-hidden rounded-lg border bg-white shadow-sm transition-shadow hover:shadow-md"
+    >
       <div className="relative h-48 w-full bg-gray-100 sm:h-56">
         <Image
           src={book.thumbnailUrl || '/placeholder-cover.svg'}
@@ -36,7 +40,10 @@ export default function BookCard({ entry, onStatusChange }: BookCardProps) {
             value={entry.status}
             onChange={handleSelectChange}
             className="w-full rounded-md border-gray-300 text-xs shadow-sm focus:border-indigo-300 focus:ring focus:ring-indigo-200 focus:ring-opacity-50"
-            onClick={(e) => e.stopPropagation()} // カード全体のクリックイベントを止める
+            onClick={(e) => {
+              e.preventDefault(); // Linkコンポーネントのナビゲーションを無効化
+              e.stopPropagation(); // イベントのバブリングを停止
+            }}
           >
             <option value="積読">積読</option>
             <option value="読書中">読書中</option>
@@ -44,6 +51,6 @@ export default function BookCard({ entry, onStatusChange }: BookCardProps) {
           </select>
         </div>
       </div>
-    </div>
+    </Link>
   );
 }
