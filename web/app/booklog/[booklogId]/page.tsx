@@ -6,6 +6,7 @@ import Link from 'next/link';
 import Image from 'next/image';
 import { useAuth, apiClient } from '@/contexts/AuthContext';
 import { BooklogEntry, SafeUser, ReviewWithUser } from '@/lib/types';
+import axios from 'axios';
 
 export default function BooklogDetailPage() {
   const { isAuthenticated, isLoading: isAuthLoading } = useAuth();
@@ -74,9 +75,13 @@ export default function BooklogDetailPage() {
       setReviews([response.data, ...reviews]); // 新しい感想をリストの先頭に追加
       setNewComment('');
       setHasSpoiler(false);
-    } catch (err: any) {
+    } catch (err: unknown) {
       console.error('Failed to post review:', err);
-      alert(err.response?.data?.message || '感想の投稿に失敗しました。');
+      if (axios.isAxiosError(err) && err.response) {
+        alert(err.response.data.message || '感想の投稿に失敗しました。');
+      } else {
+        alert('感想の投稿に失敗しました。');
+      }
     } finally {
       setIsSubmitting(false);
     }
@@ -170,7 +175,7 @@ export default function BooklogDetailPage() {
             {/* Comrades List */}
             <div className="lg:col-span-1">
               <div className="bg-white p-6 shadow sm:rounded-lg">
-                <h3 className="text-lg font-medium text-gray-900">"同志"リスト</h3>
+                <h3 className="text-lg font-medium text-gray-900">&quot;同志&quot;リスト</h3>
                 <p className="mt-2 text-sm text-gray-500">
                   この本を「積読」している他のユーザーです。
                 </p>

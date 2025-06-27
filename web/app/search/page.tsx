@@ -8,6 +8,7 @@ import { Book } from '@/lib/generated/prisma';
 import { useAuth } from '@/contexts/AuthContext';
 import { useRouter } from 'next/navigation';
 import { BooklogEntry } from '@/lib/types';
+import axios from 'axios';
 
 export default function SearchPage() {
   const { isAuthenticated, isLoading: isAuthLoading } = useAuth();
@@ -81,7 +82,7 @@ export default function SearchPage() {
       await apiClient.post('/booklog', { isbn });
       // Update the "ground truth" state on success
       setMyBookIsbns((prev) => new Set(prev).add(isbn));
-    } catch (err: any) {
+    } catch (err: unknown) {
       // Revert optimistic update on failure
       setAddedBooks((prev) => {
         const newSet = new Set(prev);
@@ -89,7 +90,7 @@ export default function SearchPage() {
         return newSet;
       });
 
-      if (err.response?.data?.message) {
+      if (axios.isAxiosError(err) && err.response) {
         // Don't show alert if the book is just "already added"
         if (err.response.status !== 400 || !err.response.data.message.includes('既に追加されています')) {
           alert(err.response.data.message);
