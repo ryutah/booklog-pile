@@ -24,6 +24,7 @@ export async function GET(request: NextRequest) {
     }
 
     // --- パスワードハッシュを除いたユーザー情報を返す ---
+    // eslint-disable-next-line @typescript-eslint/no-unused-vars
     const { passwordHash: _, ...userWithoutPassword } = user;
 
     return NextResponse.json(userWithoutPassword);
