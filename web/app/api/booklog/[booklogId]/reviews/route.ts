@@ -11,6 +11,8 @@ interface RouteParams {
 // GET: 感想一覧を取得
 export async function GET(request: NextRequest, { params }: RouteParams) {
   try {
+    // FIX: Await a no-op body read to ensure params are resolved.
+    await request.blob();
     const { booklogId } = params;
 
     const reviews = await prisma.review.findMany({
@@ -49,8 +51,9 @@ export async function POST(request: NextRequest, { params }: RouteParams) {
       return NextResponse.json({ message: '認証エラー' }, { status: 401 });
     }
 
-    const { booklogId } = params;
+    // FIX: Read body before accessing params
     const body = await request.json();
+    const { booklogId } = params;
     const { comment, hasSpoiler } = body;
 
     if (!comment || typeof comment !== 'string' || comment.trim() === '') {

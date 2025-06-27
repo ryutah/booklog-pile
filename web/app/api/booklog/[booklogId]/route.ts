@@ -16,6 +16,8 @@ export async function GET(request: NextRequest, { params }: RouteParams) {
       return NextResponse.json({ message: '認証エラー' }, { status: 401 });
     }
 
+    // FIX: Await a no-op body read to ensure params are resolved.
+    await request.blob();
     const { booklogId } = params;
 
     const entry = await prisma.booklogEntry.findFirst({
@@ -53,8 +55,9 @@ export async function PATCH(request: NextRequest, { params }: RouteParams) {
       return NextResponse.json({ message: '認証エラー' }, { status: 401 });
     }
 
-    const { booklogId } = params;
+    // FIX: Read body before accessing params
     const body = await request.json();
+    const { booklogId } = params;
     const { status } = body;
 
     if (!status || !Object.values(BookStatus).includes(status)) {
@@ -117,6 +120,8 @@ export async function DELETE(request: NextRequest, { params }: RouteParams) {
       return NextResponse.json({ message: '認証エラー' }, { status: 401 });
     }
 
+    // FIX: Await a no-op body read to ensure params are resolved.
+    await request.blob();
     const { booklogId } = params;
 
     // ユーザーが所有する蔵書エントリか確認
