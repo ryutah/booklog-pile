@@ -20,7 +20,7 @@
 - **フレームワーク**: [Next.js](https://nextjs.org/) (App Router)
 - **言語**: [TypeScript](https://www.typescriptlang.org/)
 - **UI**: [React](https://react.dev/), [Tailwind CSS](https://tailwindcss.com/)
-- **データベース**: [PostgreSQL](https://www.postgresql.org/)
+- **データベース**: [SQLite](https://www.sqlite.org/)
 - **ORM**: [Prisma](https://www.prisma.io/)
 - **APIクライアント**: [Axios](https://axios-http.com/)
 - **状態管理**: React Context API
@@ -33,7 +33,6 @@
 
 - [Node.js](https://nodejs.org/) (v18.18.0 以上)
 - [pnpm](https://pnpm.io/installation)
-- [Docker](https://www.docker.com/) と [Docker Compose](https://docs.docker.com/compose/)
 
 ### 手順
 
@@ -50,18 +49,12 @@
     pnpm install
     ```
 
-3.  **Dockerを使用してPostgreSQLデータベースを起動します。**
-
-    ```bash
-    docker-compose up -d
-    ```
-
-4.  **環境変数を設定します。**
+3.  **環境変数を設定します。**
     `.env` ファイルをプロジェクトルート（`web/` ディレクトリ）に作成し、以下の内容を記述します。
 
     ```env
-    # PostgreSQL connection string
-    DATABASE_URL="postgresql://user:password@localhost:5432/booklogpile?schema=public"
+    # SQLite database file path
+    DATABASE_URL="file:./dev.db"
 
     # JWT secret key for authentication
     # Generate with: openssl rand -hex 32
@@ -74,11 +67,18 @@
     openssl rand -hex 32
     ```
 
-5.  **データベースのマイグレーションを実行します。**
-    これにより、Prismaスキーマに基づいてデータベースにテーブルが作成されます。
+4.  **(初回のみ) 既存のマイグレーションを削除します。**
+    PostgreSQLから切り替えるため、古いマイグレーションファイルを削除します。
 
     ```bash
-    pnpm exec prisma migrate dev
+    rm -rf prisma/migrations
+    ```
+
+5.  **データベースのマイグレーションを実行します。**
+    これにより、Prismaスキーマに基づいて`prisma/dev.db`というSQLiteデータベースファイルが作成されます。
+
+    ```bash
+    pnpm exec prisma migrate dev --name init
     ```
 
 6.  **開発サーバーを起動します。**
@@ -111,6 +111,7 @@ web/
 │   ├── prisma.ts
 │   └── types.ts
 ├── prisma/             # Prismaスキーマとマイグレーション
+│   ├── dev.db          # SQLiteデータベースファイル
 │   └── schema.prisma
 ├── public/             # 静的ファイル (画像など)
 ├── .env                # (ローカル用) 環境変数ファイル
