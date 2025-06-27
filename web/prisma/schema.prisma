@@ -72,7 +72,7 @@ model Review {
   id             String       @id @default(uuid())
   booklogEntryId String       @map("booklog_entry_id")
   userId         String       @map("user_id")
-  comment        String       @db.Text
+  comment        String
   hasSpoiler     Boolean      @default(false) @map("has_spoiler")
   createdAt      DateTime     @default(now()) @map("created_at")
 
