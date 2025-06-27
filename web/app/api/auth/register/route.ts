@@ -47,7 +47,7 @@ export async function POST(request: Request) {
     });
 
     // --- パスワードハッシュを除いたユーザー情報を返す ---
-    const { passwordHash, ...userWithoutPassword } = user;
+    const { passwordHash: _, ...userWithoutPassword } = user;
 
     return NextResponse.json(userWithoutPassword, { status: 201 });
   } catch (error) {

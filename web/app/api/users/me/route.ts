@@ -24,7 +24,7 @@ export async function GET(request: NextRequest) {
     }
 
     // --- パスワードハッシュを除いたユーザー情報を返す ---
-    const { passwordHash, ...userWithoutPassword } = user;
+    const { passwordHash: _, ...userWithoutPassword } = user;
 
     return NextResponse.json(userWithoutPassword);
 

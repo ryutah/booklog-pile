@@ -25,7 +25,7 @@ export default function LoginPage() {
         // AuthContextのlogin関数を呼び出す
         await login(response.data.accessToken);
       }
-    } catch (err: any) {
+    } catch (err: unknown) {
       if (axios.isAxiosError(err) && err.response) {
         setError(err.response.data.message || 'ログインに失敗しました。');
       } else {

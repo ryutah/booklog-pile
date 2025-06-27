@@ -41,7 +41,7 @@ export default function RegisterPage() {
           await login(loginResponse.data.accessToken);
         }
       }
-    } catch (err: any) {
+    } catch (err: unknown) {
       if (axios.isAxiosError(err) && err.response) {
         setError(err.response.data.message || '登録に失敗しました。');
       } else {

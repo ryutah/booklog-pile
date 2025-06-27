@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import prisma from '@/lib/prisma';
 import { getUserIdFromRequest } from '@/lib/auth';
-import { BookStatus, Book } from '@/lib/generated/prisma';
+import { BookStatus, Book, Prisma } from '@/lib/generated/prisma';
 import axios from 'axios';
 
 export async function GET(request: NextRequest) {
@@ -59,7 +59,7 @@ async function fetchBookByIsbn(isbn: string): Promise<Book | null> {
 
     const volumeInfo = response.data.items[0].volumeInfo;
     const isbn13 = volumeInfo.industryIdentifiers?.find(
-      (id: any) => id.type === 'ISBN_13'
+      (id: { type: string; identifier: string }) => id.type === 'ISBN_13'
     )?.identifier;
 
     if (!isbn13) return null;
@@ -150,7 +150,7 @@ export async function POST(request: NextRequest) {
   } catch (error) {
     console.error('Add book to log error:', error);
     // Prismaのユニーク制約違反エラーをハンドリング
-    if (error instanceof Error && 'code' in error && (error as any).code === 'P2002') {
+    if (error instanceof Prisma.PrismaClientKnownRequestError && error.code === 'P2002') {
         return NextResponse.json(
             { message: 'この本は既に追加されています' },
             { status: 400 }
