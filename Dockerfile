@@ -5,6 +5,10 @@
 # 'slim' is a good choice for smaller image sizes.
 FROM node:24-slim AS base
 
+# Install OpenSSL, which is required by Prisma, and clean up apt cache.
+# The node:slim image does not include it by default.
+RUN apt-get update && apt-get install -y openssl && rm -rf /var/lib/apt/lists/*
+
 # Set working directory for all subsequent commands
 WORKDIR /app
 
