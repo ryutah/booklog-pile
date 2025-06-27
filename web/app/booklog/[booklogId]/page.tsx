@@ -222,7 +222,7 @@ export default function BooklogDetailPage() {
                         rows={4}
                         value={newComment}
                         onChange={(e) => setNewComment(e.target.value)}
-                        className="block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm"
+                        className="block w-full rounded-md border-gray-300 text-gray-900 placeholder-gray-900 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm"
                         placeholder="感想を書きましょう..."
                         required
                       />
