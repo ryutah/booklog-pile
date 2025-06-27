@@ -5,7 +5,7 @@ import { BookStatus } from '@/lib/generated/prisma';
 
 export async function GET(
   request: NextRequest,
-  { params }: { params: { booklogId: string } }
+  { params }: { params: Promise<{ booklogId: string }> }
 ) {
   try {
     const userId = getUserIdFromRequest(request);
@@ -13,9 +13,7 @@ export async function GET(
       return NextResponse.json({ message: '認証エラー' }, { status: 401 });
     }
 
-    // FIX: Await a no-op body read to ensure params are resolved.
-    await request.blob();
-    const { booklogId } = params;
+    const { booklogId } = await params;
 
     const entry = await prisma.booklogEntry.findFirst({
       where: {
@@ -47,7 +45,7 @@ export async function GET(
 
 export async function PATCH(
   request: NextRequest,
-  { params }: { params: { booklogId: string } }
+  { params }: { params: Promise<{ booklogId: string }> }
 ) {
   try {
     const userId = getUserIdFromRequest(request);
@@ -55,9 +53,8 @@ export async function PATCH(
       return NextResponse.json({ message: '認証エラー' }, { status: 401 });
     }
 
-    // FIX: Read body before accessing params
     const body = await request.json();
-    const { booklogId } = params;
+    const { booklogId } = await params;
     const { status } = body;
 
     if (!status || !Object.values(BookStatus).includes(status)) {
@@ -115,7 +112,7 @@ export async function PATCH(
 
 export async function DELETE(
   request: NextRequest,
-  { params }: { params: { booklogId: string } }
+  { params }: { params: Promise<{ booklogId: string }> }
 ) {
   try {
     const userId = getUserIdFromRequest(request);
@@ -123,9 +120,7 @@ export async function DELETE(
       return NextResponse.json({ message: '認証エラー' }, { status: 401 });
     }
 
-    // FIX: Await a no-op body read to ensure params are resolved.
-    await request.blob();
-    const { booklogId } = params;
+    const { booklogId } = await params;
 
     // ユーザーが所有する蔵書エントリか確認
     const entry = await prisma.booklogEntry.findFirst({

@@ -5,12 +5,10 @@ import { getUserIdFromRequest } from '@/lib/auth';
 // GET: 感想一覧を取得
 export async function GET(
   request: NextRequest,
-  { params }: { params: { booklogId: string } }
+  { params }: { params: Promise<{ booklogId: string }> }
 ) {
   try {
-    // FIX: Await a no-op body read to ensure params are resolved.
-    await request.blob();
-    const { booklogId } = params;
+    const { booklogId } = await params;
 
     const reviews = await prisma.review.findMany({
       where: {
@@ -43,7 +41,7 @@ export async function GET(
 // POST: 感想を投稿
 export async function POST(
   request: NextRequest,
-  { params }: { params: { booklogId: string } }
+  { params }: { params: Promise<{ booklogId: string }> }
 ) {
   try {
     const userId = getUserIdFromRequest(request);
@@ -51,9 +49,8 @@ export async function POST(
       return NextResponse.json({ message: '認証エラー' }, { status: 401 });
     }
 
-    // FIX: Read body before accessing params
     const body = await request.json();
-    const { booklogId } = params;
+    const { booklogId } = await params;
     const { comment, hasSpoiler } = body;
 
     if (!comment || typeof comment !== 'string' || comment.trim() === '') {
