@@ -79,6 +79,10 @@ COPY --from=builder /app/package.json ./package.json
 # Copy Prisma schema and the migrated database from the builder stage
 COPY --from=builder --chown=nextjs:nodejs /app/prisma ./prisma
 
+# Copy the generated Prisma Client and Query Engine from the builder stage
+# This is crucial for the app to find the engine file at runtime.
+COPY --from=builder --chown=nextjs:nodejs /app/lib ./lib
+
 # Change ownership of all files to the non-root user
 RUN chown -R nextjs:nodejs .
 
