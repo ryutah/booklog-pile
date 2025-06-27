@@ -37,6 +37,12 @@ COPY web .
 # Generate Prisma Client. This is required before building the app.
 RUN pnpm exec prisma generate
 
+# Run database migrations.
+# This creates the SQLite database file with the latest schema.
+# The DATABASE_URL is defined in prisma/schema.prisma and points to a file
+# which will be created at ./prisma/dev.db relative to the project root.
+RUN pnpm exec prisma migrate deploy
+
 # Build the Next.js application for production
 RUN pnpm build
 
@@ -66,12 +72,10 @@ COPY --from=builder /app/public ./public
 COPY --from=builder /app/next.config.ts ./next.config.ts
 COPY --from=builder /app/package.json ./package.json
 
-# Copy Prisma schema for runtime usage
-COPY web/prisma/schema.prisma ./prisma/schema.prisma
+# Copy Prisma schema and the migrated database from the builder stage
+COPY --from=builder --chown=nextjs:nodejs /app/prisma ./prisma
 
-# Create a directory for the SQLite database and set ownership.
-# The actual database file should be mounted as a volume from the host.
-RUN mkdir -p prisma
+# Change ownership of all files to the non-root user
 RUN chown -R nextjs:nodejs .
 
 # Switch to the non-root user
