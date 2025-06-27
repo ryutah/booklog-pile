@@ -38,23 +38,27 @@
 ### 手順
 
 1.  **リポジトリをクローンします。**
+
     ```bash
     git clone <repository-url>
     cd web
     ```
 
 2.  **依存パッケージをインストールします。**
+
     ```bash
     pnpm install
     ```
 
 3.  **Dockerを使用してPostgreSQLデータベースを起動します。**
+
     ```bash
     docker-compose up -d
     ```
 
 4.  **環境変数を設定します。**
     `.env` ファイルをプロジェクトルート（`web/` ディレクトリ）に作成し、以下の内容を記述します。
+
     ```env
     # PostgreSQL connection string
     DATABASE_URL="postgresql://user:password@localhost:5432/booklogpile?schema=public"
@@ -63,18 +67,22 @@
     # Generate with: openssl rand -hex 32
     JWT_SECRET="YOUR_SECRET_KEY_HERE"
     ```
+
     **Note:** `JWT_SECRET` は以下のコマンドで生成したランダムな文字列に置き換えてください。
+
     ```bash
     openssl rand -hex 32
     ```
 
 5.  **データベースのマイグレーションを実行します。**
     これにより、Prismaスキーマに基づいてデータベースにテーブルが作成されます。
+
     ```bash
     pnpm exec prisma migrate dev
     ```
 
 6.  **開発サーバーを起動します。**
+
     ```bash
     pnpm dev
     ```
