@@ -3,7 +3,7 @@
 # ---- Base Image ----
 # Use a specific version of Node for reproducibility.
 # 'slim' is a good choice for smaller image sizes.
-FROM node:20-slim AS base
+FROM node:24-slim AS base
 
 # Set working directory for all subsequent commands
 WORKDIR /app
