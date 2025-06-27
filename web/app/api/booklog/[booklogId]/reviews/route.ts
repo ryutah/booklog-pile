@@ -2,14 +2,11 @@ import { NextRequest, NextResponse } from 'next/server';
 import prisma from '@/lib/prisma';
 import { getUserIdFromRequest } from '@/lib/auth';
 
-interface RouteParams {
-  params: {
-    booklogId: string;
-  };
-}
-
 // GET: 感想一覧を取得
-export async function GET(request: NextRequest, { params }: RouteParams) {
+export async function GET(
+  request: NextRequest,
+  { params }: { params: { booklogId: string } }
+) {
   try {
     // FIX: Await a no-op body read to ensure params are resolved.
     await request.blob();
@@ -44,7 +41,10 @@ export async function GET(request: NextRequest, { params }: RouteParams) {
 }
 
 // POST: 感想を投稿
-export async function POST(request: NextRequest, { params }: RouteParams) {
+export async function POST(
+  request: NextRequest,
+  { params }: { params: { booklogId: string } }
+) {
   try {
     const userId = getUserIdFromRequest(request);
     if (!userId) {

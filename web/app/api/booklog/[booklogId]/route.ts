@@ -3,13 +3,10 @@ import prisma from '@/lib/prisma';
 import { getUserIdFromRequest } from '@/lib/auth';
 import { BookStatus } from '@/lib/generated/prisma';
 
-interface RouteParams {
-  params: {
-    booklogId: string;
-  };
-}
-
-export async function GET(request: NextRequest, { params }: RouteParams) {
+export async function GET(
+  request: NextRequest,
+  { params }: { params: { booklogId: string } }
+) {
   try {
     const userId = getUserIdFromRequest(request);
     if (!userId) {
@@ -48,7 +45,10 @@ export async function GET(request: NextRequest, { params }: RouteParams) {
   }
 }
 
-export async function PATCH(request: NextRequest, { params }: RouteParams) {
+export async function PATCH(
+  request: NextRequest,
+  { params }: { params: { booklogId: string } }
+) {
   try {
     const userId = getUserIdFromRequest(request);
     if (!userId) {
@@ -113,7 +113,10 @@ export async function PATCH(request: NextRequest, { params }: RouteParams) {
   }
 }
 
-export async function DELETE(request: NextRequest, { params }: RouteParams) {
+export async function DELETE(
+  request: NextRequest,
+  { params }: { params: { booklogId: string } }
+) {
   try {
     const userId = getUserIdFromRequest(request);
     if (!userId) {
